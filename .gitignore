@@ -22,8 +22,6 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Excel de trabajo o temporales
-Datos/WIP/
-Finalizado/
 *.xlsx~
 *.tmp.xlsx
 ~$*.xlsx  # archivos temporales de Excel (Windows)
