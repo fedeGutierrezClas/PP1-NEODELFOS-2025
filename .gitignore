@@ -1,0 +1,44 @@
+# Entorno virtual
+venv/
+.env
+*.env
+
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+
+# Archivos de configuración o caché
+*.sqlite3
+*.db
+*.DS_Store
+*.egg-info/
+*.bak
+*.swp
+
+# Archivos de Jupyter (si llegás a usarlos)
+.ipynb_checkpoints/
+
+# Excel de trabajo o temporales
+Datos/WIP/
+Finalizado/
+*.xlsx~
+*.tmp.xlsx
+~$*.xlsx  # archivos temporales de Excel (Windows)
+
+# Archivos de VS Code
+.vscode/
+
+# Archivos comprimidos o de backup
+*.zip
+*.tar
+*.gz
+*.rar
+*.7z
+
+# Informes generados
+Informes/*.pdf
+Informes/*.html
+Informes/*.csv
