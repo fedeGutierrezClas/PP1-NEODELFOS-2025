@@ -5,6 +5,7 @@ Repositorio del código fuente del proyecto del grupo de trabajo de NEODELFOS pa
 
 ## 📁 Estructura del proyecto
 
+```plaintext
 proyecto_Neodelfos                             ← Carpeta madre
 └plantilla_ETL/                                ← Carpeta contenedora del proyecto
  ├── Datos/                                    ← Carpeta contenedora de datos del proyecto
