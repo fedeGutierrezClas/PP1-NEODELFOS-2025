@@ -40,3 +40,4 @@ __pycache__/
 Informes/*.pdf
 Informes/*.html
 Informes/*.csv
+/plantilla_ETL/Datos/WIP/RG/CONSOLIDADO
