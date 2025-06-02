@@ -1,0 +1,11 @@
+pip
+python == 3.11.9
+cookiecutter == 2.6.0
+pandas == 2.2.3
+sqlalchemy == 2.0.41
+openpyxl == 3.1.5
+pyodbc == 5.2.0
+numpy == 2.2.5
+python-dotenv
+ruff
+-e .
