@@ -1,0 +1,110 @@
+## ETAPA 0 ##
+0.1 ejecutar "Jupyter Notebook" y verificar que este la carpeta "raw" que es donde estan los archivos originales
+0.2 crear "New Notebook"
+0.3 en la ventana emergente, click en "select"
+0.4 click en la parte superior donde dice "untitled" 
+0.5 en la nueva ventana, escribimos el nombre que va a tener el notebook, utilizar "avance_rg.ipynb" y click en "rename"
+0.6 verificar que el entorno sea correcto
+
+## ETAPA 1.0 ##
+>>> Librerias requeridas:
+"pandas": Manipulación y análisis de datos tabulares
+"numpy": Operaciones numéricas (uso ocasional para reemplazos o condiciones)
+"sklearn.ensemble": Se importa IsolationForest para detección automatizada de outliers
+
+1.0 Este bloque debe ejecutarse apenas se inicia el notebook, ya que carga las librerías fundamentales que serán utilizadas en todo el desarrollo. En caso de error por falta de instalación, se recomienda ejecutar previamente: 
+!pip install pandas numpy scikit-learn
+
+## ETAPA 1.1 + 1.2 ##
+Objetivo: Leer correctamente el archivo .csv con configuración regional (separador, decimal, codificación), y convertir la columna de fecha al formato "dd/mm/aa" eliminando la hora si estuviera presente.
+
+>>> Diccionario
+sep=";" : el punto y coma es el delimitador estandar en archivos CSV regionales
+decimal="," : indica que los numeros usan comas como separador decimal
+encoding='utf-8' : asegura que se lean correctamente los acentos y caracteres especiales
+pd.to_datetime() : convierte la columna de "fecha" de formato texto a formato "date"(fecha)
+format='&d/&m/&Y' : indica el orden dia/mes/año, obligatorio para evitar errores de interpretacion
+.dt.date : elimina la hora del registro, dejando solamente la fecha 
+errors='coerce"
+
+1.1.1 Creacion del diccionario "meses" para utilizar para dar formato a la columna "fecha"
+1.1.2 Se establece la ruta de donde se carga el archivo CSV con sus condiciones, y nos da un print como respuesta para verificar que fue encontrado.
+1.1.3 Elimina el nombre del dia, para convertir texto a formato "fecha"
+1.1.4 Reemplaza el nombre del mes largo,a un valor numerico asignado en el diccionario. Nos da un print como respuesta para verificar que fue convertido.
+1.1.5 Convierte la columna "fecha" a formato "datetime"
+1.1.6 Este print nos hace una verificacion visual, trayendo las primeras filas para corroborar que esta correcto.
+1.1.7 Deberia resultar como en la imagen
+
+>>> Se detecto un error relacionado a la columna "fecha" donde arroja valor NaT, se intento solucionar con diversos enfoques desde pandas, excel y power bi. Finalmente se logro resolver mediante la creacion de un diccionario llamado "meses" donde cada nombre de mes en español se asocia a su equivalente numérico en formato de dos dígitos (ej: 'abril' → '04').
+Este recurso permite reemplazar dinámicamente los nombres de mes en todo el DataFrame antes de convertir las fechas.<<<
+
+## ETAPA 1.3 ##
+Objetivo: Detectar todos los valores de precio iguales a 0 y corregirlos automáticamente utilizando una ventana móvil de mayor o menor en una ventana de 10 días, buscando valores válidos dentro del mismo grupo de producto y proveedor
+
+1.2.1 Crea una nueva columna "precio_validado", para que el precio original no se pierda ni se sobreescriba. Esta columna sera la que limpie/corrija durante el proceso ETL.
+1.2.2 Esto ordena el dataframe en 3 variables clave: "proveedor","producto" y "fecha". Esto es importante para que la interpolacion que se aplique por tiempo sea logica, ya que depende de un orden cronologico.
+1.2.3 Agrupa el dataframe por la combinacion unica de "proveedor" y "producto". Esto permite trabajar cada serie de precios de manera aislada, asegurando que se comparen solo precios dentro del mismo contexto.
+Tambien hace una copia del grupo para trabajar sobre el sin modificar directamente la columna original.Esto previene errores cuando luego se asigne un valor interpolado.
+Se reemplazan los valores igual a "0" por "NaN", esto es necesario para que la funcion "interpolate()" de pandas solo actua sobre celdas "NaN"
+En lineas 10 y 11 se hace la interpolacion usando como indice "fecha", con "method='time" interpola basandose en fechas reales y no la posicion que ocupa en la fila, "limit=10" es el maximo de 10 dias anteriores o siguientes, "limit_direction=both" es lo que permite interpolar tanto hacia atras como hacia adelante en el tiempo.
+Luego en linea 12, va a volcar los valores corregidos del grupo, al dataframe original.
+1.2.4 Mediante un print se corrobora que todo lo anterior haya sido aplicado correctamente.
+1.2.5 Se incluye una linea adicional con una verificacion visual sobre cómo fueron corregidos los valores originalmente iguales a 0.
+Se listan las primeras filas afectadas, mostrando el precio original, el producto, el proveedor, la fecha y el nuevo valor interpolado. Esto es útil para validación manual y registro fotográfico del proceso.
+1.2.6 Se espera una visualizacion como la demostrada.
+
+>>> Algunos valores igual a 0 no fueron corregidos y permanecen como NaN en la columna 'precio_validado'. 
+Esto ocurre cuando no se encuentran precios válidos en el rango temporal definido (±10 días) para ese mismo producto y proveedor. 
+Un ejemplo claro son productos estacionales como los "Conejos de Pascua", que solo se comercializan en fechas específicas, lo cual puede atribuirse a una falta de stock, o fin de comercializacion del producto <<< 
+
+## ETAPA 1.4 ##
+Objetivo: Detectar valores muy pequeños que probablemente se cargaron mal por error de punto/coma (ej. 433,4 cargado como 0,4334) y corregirlos automáticamente multiplicando por 100.
+
+1.3.1 Se define una condicion para detectar precios anomalos por su valor decimal (rango mayores que 0 pero menores que 10), que probablemente hayan sido alterados en su carga. Se excluyen los 0 que ya fueron tratados anteriormente.
+Ademas aplica esta correccion multiplicando esos valores por 100, bajo el supuesto de que hay un error en su carga debido al punto decimal que se encuentra.
+1.3.2 Mediante este print se confirma que la correccion fue aplicada
+1.3.3 La funcion de este print es mostrar algunos registros corregidos para tener una doble verificacion de funcionalidad
+1.3.4 Se espera una visualizacion como la demostrada.
+
+## ETAPA 1.5 ##
+Objetivo: Detectar precios anómalos sin usar umbrales fijos, utilizando el algoritmo IsolationForest de scikit-learn. Esto permite identificar outliers de forma contextual y automatizada, respetando las variaciones por producto y proveedor.
+
+1.4.1 Introduce el modelo "IsolationForest" de la librerira "scikit-learn" para marcar "outliers"
+1.4.2 Crea la columna para marcar "outliers", con valor inicial "0", que pasara a "1" si un valor es identificado como anomalo.
+1.4.3 Se indica que la tasa de contaminacion "contamination=0.01" espera que solo un 1% de los datos, por grupo, sean valores extremos.Con "random_state42" permite que el resultado sea reproducible siempre que se ejecute con los mismos datos
+1.4.4 Agrupa nuestro dataset por combinacion unica de "proveedor" y "producto", para analizar patrones propios por grupo, "total" es la cantidad total de grupos, y con "paso" determinamos cada cuantos grupos mostrara un mensaje de avance, ya que el modelo demora en procesar todo, en este caso representa aproximadamente un 5% del total.
+1.4.5 Este bloque itera sobre cada grupo proveedor/producto. con "grupo.copy()" evita modificar el dataframe original, con "dropna()" elimina precios faltantes antes de aplicar el modelo.Si el grupo tiene suficientes datos (mas de 10) aplica el modelo, "fit_predict()" que entrena nuestro modelo y devuelve una prediccion por fila,"pred == -1" indica que fila es considerada "outlier". Esto va actualizar la columna "outlier" de nuestro dataframe original en los indices detectados. 
+1.4.6 Mediante este print se confirma la ejecucion correcta del proceso de deteccion mediante varios prints que emulan una "barra de carga" que imprime por consola el porcentaje de avance (anteriormente seteado a que emule un 5% de carga), lo cual ayuda a monitorear que el ciclo sigue activo.
+1.4.7 Mediante este print se confirma que todos los grupos fueron procesados.
+1.4.8 Este print sirve como verificación visual permitiendo observar directamente los registros marcados como "outliers" por el algoritmo "IsolationForest".Se imprimen los primeros 10 registros detectados como outliers. Esta verificación permite confirmar visualmente si la detección fue exitosa antes de continuar con la siguiente etapa.
+1.4.9 Se espera una visualizacion como la demostrada.
+1.4.9.1>>> Durante el testeo del modelo IsolationForest se detectó un tiempo de procesamiento elevado al aplicarse sobre todo el conjunto de grupos.
+Por motivos de validación funcional, se limitó el análisis a los primeros 30 grupos únicos de producto-proveedor, manteniendo la lógica completa sin alterar su comportamiento <<< 
+
+## ETAPA 1.6 ##
+Objetivo: Corregir valores que fueron detectados como outliers por IsolationForest, pero que no fueron corregidos antes.Se utilizará una ventana móvil de 10 días para cada grupo producto + proveedor, interpolando el precio correcto a partir de fechas cercanas.
+
+1.5.1 Se importa "timedelta" para manejar ventanas de tiempo, crea una nueva columna "precio_final" para guardar la version definitiva del precio, tomando como base "precio_validado".Al finalizar se filtran todos los registros que fueron marcados como "outlier" en la etapa anterior
+1.5.2 Recorre cada "outlier" individualmente, extrayendo "proveedor","producto" y "fecha", lo cual permite hacer una evaluacion personalizada de su contexto.
+1.5.3 Se define un rango de 10 dias alrededor de la fecha del registro anomalo, lo que permite buscar precios anteriores y posteriores que puedan servir como referencia
+1.5.4 Se filtran los registros que sean del mismo proveedor/producto, dentro de la ventana temporal asignada que no hayan sido marcados como "outlier" y cuyo "precio_validado" no sea nulo.Esto asegura que los valores usados para corregir provengan de precios confiables y normales
+1.5.5 Si encuentra al menos 2 "precio_valido" dentro de la ventana, calcula el promedio. El valor final del "outlier" se reemplaza por este promedio, redondeado a 2 decimales. Este paso corrige el precio automaticamente sin intervencion manual.
+1.5.6 Con estos prints nos trae un mensaje de confirmacion ademas de una muestra de registros cuyo "precio_final" fue modificado en base a su "precio_validado". Esto permite verificar que la logica de correccion automatica funciona correctamente.
+1.5.7 Esta ultima verificacion visual, hace una comparativa completa entre los 3 estados del dato:el precio original,el precio validado(despues de correcciones basicas) y su precio final(despues de corregir los "outliers").
+Permite detectar si hubo cambios acumulativos, detectar falsos positivos o validar que los ajustes fueron coherentes con el contexto del grupo.
+>>>Tener en cuenta que este proceso tambien es lento. CONSIDERECION: en Jupyter Notebook al lado del bloque de codigo se puede ver [*] en azul, eso significa que el archivo todavia esta procesado<<<
+1.5.8 Se incorpora un print adicional que confirma la ejecucion correcta del proceso de deteccion mediante varios prints que emulan una "barra de carga" que imprime por consola el porcentaje de avance (anteriormente seteado a que emule un 5% de carga), lo cual ayuda a monitorear que el ciclo sigue activo.
+1.5.8 Se espera una visualizacion como la demostrada.
+
+## ETAPA 1.7 ##
+Objetivo: Aplicar una última validación automática sobre posibles errores decimales remanentes que hayan sobrevivido a todas las etapas anteriores. Este control se enfoca exclusivamente en casos de valores sospechosamente bajos (ej. $0.44 o $1.21), que por su comportamiento pueden no haber sido detectados como outliers ni corregidos por interpolación.Se generara una nueva columna "precio_final_corregido", para preservar los valores originales y mantener una trazabilidad completa.
+
+1.6.1 Toma el valor final anterior y lo copia a una nueva columna para aplicar una ultima correccion decimal, lo cual asegura la trazabilidad sin sobreescribir resultados previos.
+1.6.2 Identifica los precios positivos que sean mayores a 0 pero menores a 5 y que tienen un valor valido (no "NaN"). Este umbral es para detectar errores comunes de punto decimal. Luego se lo multiplica por 100 para ajustar su valor.
+1.6.3 Mediante un print en consola, verifica que el proceso se ejecuto correctamente y ademas se hace una verificacion visual donde lista los registros en los que se aplico la correccion decimal.Esto permite hacer auditorias rapidas antes de continuar con el flujo de trabajo.
+1.6.4 Se espera una visualizacion como la demostrada.
+
+## Fin del Dia ##
+
+Se guarda el archivo con el nombre "avance_rg_pandas.csv" y se aguarda validacion para realizar cambios de ser necesario o comenzar con las visualizaciones de prueba.
+se hizo registro fotografico para la elaboracion del manual, y tambien se hizo un readme.md con un diccionario y requerimientos para poder correr este archivo. tambien subire el notebook a mi rama de github
